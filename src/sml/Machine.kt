@@ -110,11 +110,7 @@ data class Machine(var pc: Int, val noOfRegisters: Int) {
         paramTypes.next()
         while (paramTypes.hasNext()) {
             val type = paramTypes.next()
-            if (type.name == "int") {
-                params.add(scanInt())
-            } else {
-                params.add(scan())
-            }
+            if (type.name == "int") params.add(scanInt()) else params.add(scan())
         }
         return constructor.newInstance(*(params.toArray())) as Instruction
     }
