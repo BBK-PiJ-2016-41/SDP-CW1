@@ -5,6 +5,12 @@ import java.io.File
 import java.io.IOException
 import java.util.Scanner
 import kotlin.collections.ArrayList
+import kotlin.reflect.KClass
+import kotlin.reflect.full.*
+import kotlin.reflect.full.createInstance
+import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.jvm.jvmName
+import kotlin.reflect.jvm.kotlinFunction
 
 /*
  * The machine language interpreter
@@ -94,55 +100,23 @@ data class Machine(var pc: Int, val noOfRegisters: Int) {
      * Translate line into an instruction with label label and return the instruction
      */
     fun getInstruction(label: String): Instruction {
-        val s1: Int // Possible operands of the instruction
-        val s2: Int
-        val r: Int
-
+        val params: ArrayList<Any> = arrayListOf()
+        params.add(label)
         val ins = scan()
-        return when (ins) { // replace with reflection
-            "add" -> {
-                r = scanInt()
-                s1 = scanInt()
-                s2 = scanInt()
-                AddInstruction(label, r, s1, s2)
-            }
-            "lin" -> {
-                r = scanInt()
-                s1 = scanInt()
-                LinInstruction(label, r, s1)
-            }
-            "sub" -> {
-                r = scanInt()
-                s1 = scanInt()
-                s2 = scanInt()
-                SubInstruction(label, r, s1, s2)
-            }
-            "mul" -> {
-                r = scanInt()
-                s1 = scanInt()
-                s2 = scanInt()
-                MulInstruction(label, r, s1, s2)
-            }
-            "div" -> {
-                r = scanInt()
-                s1 = scanInt()
-                s2 = scanInt()
-                DivInstruction(label, r, s1, s2)
-            }
-            "out" -> {
-                s1 = scanInt()
-                OutInstruction(label, s1)
-            }
-            "bnz" -> {
-                s1 = scanInt()
-                var newPc = scan()
-                BnzInstruction(label, s1, instruction = newPc)
-            }
-        // You will have to write code here for the other instructions
-            else -> {
-                NoOpInstruction(label, line)
+        val className = (ins + "Instruction").capitalize()
+        val insClass = Class.forName("sml.instructions." + className)
+        val constructor = insClass.constructors[0]
+        val paramTypes = constructor.parameterTypes.iterator()
+        paramTypes.next()
+        while (paramTypes.hasNext()) {
+            val type = paramTypes.next()
+            if (type.name == "int") {
+                params.add(scanInt())
+            } else {
+                params.add(scan())
             }
         }
+        return constructor.newInstance(*(params.toArray())) as Instruction
     }
 
     /*
