@@ -104,15 +104,21 @@ data class Machine(var pc: Int, val noOfRegisters: Int) {
         params.add(label)
         val ins = scan()
         val className = (ins + "Instruction").capitalize()
-        val insClass = Class.forName("sml.instructions." + className)
-        val constructor = insClass.constructors[0]
-        val paramTypes = constructor.parameterTypes.iterator()
-        paramTypes.next()
-        while (paramTypes.hasNext()) {
-            val type = paramTypes.next()
-            if (type.name == "int") params.add(scanInt()) else params.add(scan())
+        var instr: Instruction
+        try {
+            val insClass = Class.forName("sml.instructions." + className)
+            val constructor = insClass.constructors[0]
+            val paramTypes = constructor.parameterTypes.iterator()
+            paramTypes.next()
+            while (paramTypes.hasNext()) {
+                val type = paramTypes.next()
+                if (type.name == "int") params.add(scanInt()) else params.add(scan())
+            }
+            instr = constructor.newInstance(*(params.toArray())) as Instruction
+        } catch (e: NoClassDefFoundError) {
+            instr = (NoOpInstruction(label, line))
         }
-        return constructor.newInstance(*(params.toArray())) as Instruction
+        return instr
     }
 
     /*
