@@ -9,6 +9,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.*
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.primaryConstructor
+import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.jvmName
 import kotlin.reflect.jvm.kotlinFunction
 
@@ -106,15 +107,15 @@ data class Machine(var pc: Int, val noOfRegisters: Int) {
         val className = (ins + "Instruction").capitalize()
         var instr: Instruction
         try {
-            val insClass = Class.forName("sml.instructions." + className)
-            val constructor = insClass.constructors[0]
-            val paramTypes = constructor.parameterTypes.iterator()
-            paramTypes.next()
-            while (paramTypes.hasNext()) {
-                val type = paramTypes.next()
-                if (type.name == "int") params.add(scanInt()) else params.add(scan())
+            val insClass = Class.forName("sml.instructions." + className).kotlin
+            val constructor = insClass.primaryConstructor
+            val paramNames = constructor?.parameters!!.listIterator()
+            paramNames.next()
+            while (paramNames.hasNext()) {
+                val name = paramNames.next()
+                if (name.type.javaType.typeName == "int") params.add(scanInt()) else params.add(scan())
             }
-            instr = constructor.newInstance(*(params.toArray())) as Instruction
+            instr = constructor.call(*(params.toArray())) as Instruction
         } catch (e: NoClassDefFoundError) {
             instr = (NoOpInstruction(label, line))
         }
